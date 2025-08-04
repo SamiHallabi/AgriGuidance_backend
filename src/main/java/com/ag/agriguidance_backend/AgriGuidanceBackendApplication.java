@@ -9,5 +9,4 @@ public class AgriGuidanceBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(AgriGuidanceBackendApplication.class, args);
     }
-
 }
