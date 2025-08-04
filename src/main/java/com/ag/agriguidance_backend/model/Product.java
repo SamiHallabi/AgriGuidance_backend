@@ -1,10 +1,8 @@
 package com.ag.agriguidance_backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
+@Entity
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +19,20 @@ public class Product {
     private String usageInstructions;
 
     private int stockQuantity;
+
+    // --- Constructors ---
+
+    public Product() {}
+
+    public Product(int stockQuantity, String usageInstructions, String diseasesTreated, String description, String name, Long id) {
+        this.stockQuantity = stockQuantity;
+        this.usageInstructions = usageInstructions;
+        this.diseasesTreated = diseasesTreated;
+        this.description = description;
+        this.name = name;
+        this.id = id;
+    }
+
 
     // --- Getters and Setters ---
 
@@ -71,4 +83,5 @@ public class Product {
     public void setStockQuantity(int stockQuantity) {
         this.stockQuantity = stockQuantity;
     }
+
 }
