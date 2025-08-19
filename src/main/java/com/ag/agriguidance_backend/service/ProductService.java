@@ -38,11 +38,10 @@ public class ProductService {
     public Optional<Product> updateProduct(Long id, Product product) {
         return productRepository.findById(id)
                 .map(existingProduct -> {
-                    existingProduct.setName(product.getName());
+                    existingProduct.setTitle(product.getTitle());
                     existingProduct.setDescription(product.getDescription());
-                    existingProduct.setDiseasesTreated(product.getDiseasesTreated());
-                    existingProduct.setUsageInstructions(product.getUsageInstructions());
-                    existingProduct.setStockQuantity(product.getStockQuantity());
+                    existingProduct.setComposition(product.getComposition());
+                    existingProduct.setEmballage(product.getEmballage());
                     return productRepository.save(existingProduct);
                 });
     }

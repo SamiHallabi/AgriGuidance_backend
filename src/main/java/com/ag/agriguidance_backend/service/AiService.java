@@ -1,13 +1,15 @@
 package com.ag.agriguidance_backend.service;
 
 import com.ag.agriguidance_backend.dto.RecommendationRequestDTO;
-import com.ag.agriguidance_backend.model.Product;
-import com.ag.agriguidance_backend.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
-import java.util.*;
+
+import com.ag.agriguidance_backend.model.Product;
+import com.ag.agriguidance_backend.repository.ProductRepository;
+
+import java.util.List;
 
 @Service
 public class AiService {
@@ -20,18 +22,18 @@ public class AiService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public String askAi(RecommendationRequestDTO dto) {
-        List<Product> availableProducts = productRepository.findByStockQuantityGreaterThan(0);
+    public String getRecommendationText(RecommendationRequestDTO dto) {
+        List<Product> availableProducts = productRepository.findAll();
 
         StringBuilder stockList = new StringBuilder();
         for (Product product : availableProducts) {
-            stockList.append("- ")
-                    .append(product.getName())
-                    .append(": ")
+            stockList.append("- ID: ")
+                    .append(product.getId())
+                    .append(", Name: ")
+                    .append(product.getTitle())
+                    .append(", Description: ")
                     .append(product.getDescription())
-                    .append(" (Stock: ")
-                    .append(product.getStockQuantity())
-                    .append(")\n");
+                    .append("\n");
         }
 
         String prompt = String.format(
@@ -41,36 +43,35 @@ public class AiService {
                         "- Plant: %s\n" +
                         "- Surface: %.2f m²\n" +
                         "- Problem: %s\n\n" +
-                        "Based on the available stock, recommend one or more products that can help. " +
-                        "Explain clearly how and when to use each recommended product. If no suitable product exists, say so.",
+                        "👉 Your task: Return plain text advice for the seller, listing products and usage clearly.\n" +
+                        "Do NOT return JSON, only text instructions.",
                 stockList.toString(),
                 dto.getPlantName(),
                 dto.getSurface(),
                 dto.getProblemDescription()
         );
 
-        // Prepare request (same as before)
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(API_KEY);
 
-        Map<String, Object> body = new HashMap<>();
+        // Request body
+        var body = new java.util.HashMap<String, Object>();
         body.put("model", "mistralai/Mixtral-8x7B-Instruct-v0.1");
         body.put("messages", List.of(
-                Map.of("role", "system", "content", "You're an expert in agriculture and only recommend products from the given stock."),
-                Map.of("role", "user", "content", prompt)
+                java.util.Map.of("role", "system", "content", "You're an expert in agriculture."),
+                java.util.Map.of("role", "user", "content", prompt)
         ));
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-        ResponseEntity<Map> response = restTemplate.exchange(API_URL, HttpMethod.POST, entity, Map.class);
+        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
         try {
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
-            return (String) ((Map<String, Object>) choices.get(0).get("message")).get("content");
+            ResponseEntity<java.util.Map> response = restTemplate.exchange(API_URL, HttpMethod.POST, entity, java.util.Map.class);
+            List<java.util.Map<String, Object>> choices = (List<java.util.Map<String, Object>>) response.getBody().get("choices");
+            return (String) ((java.util.Map<String, Object>) choices.get(0).get("message")).get("content");
+
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
     }
-
 }
-
