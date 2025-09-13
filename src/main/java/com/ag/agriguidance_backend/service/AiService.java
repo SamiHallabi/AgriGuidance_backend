@@ -4,6 +4,7 @@ import com.ag.agriguidance_backend.dto.RecommendationRequestDTO;
 import com.ag.agriguidance_backend.model.Product;
 import com.ag.agriguidance_backend.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
@@ -18,7 +19,8 @@ public class AiService {
     private ProductRepository productRepository;
 
     private final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=YOUR_API_KEY";
-    private final String API_KEY = "AIzaSyADXNarOg67X8JpaLn_tSpMmwdW6uwoKgk"; // ⚠️ better move this to config/env
+    @Value("${ai.api.key}")
+    private String API_KEY ;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -43,7 +45,7 @@ public class AiService {
                         "- Plant: %s\n" +
                         "- Surface: %.2f m²\n" +
                         "- Problem: %s\n\n" +
-                        "👉 Your task: in arabic Write a clear and practical recommendation for the seller.\n" +
+                        "👉 Your task: in french Write a clear and practical recommendation for the seller.\n" +
                         "\n" +
                         "Rules:\n" +
                         "- Be short and to the point.\n" +
@@ -84,7 +86,7 @@ public class AiService {
                     Map.class
             );
 
-            // Gemini returns candidates[0].content.parts[0].text
+
             List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.getBody().get("candidates");
             if (candidates != null && !candidates.isEmpty()) {
                 Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");

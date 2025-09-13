@@ -1,16 +1,13 @@
 package com.ag.agriguidance_backend.controller;
 
 import com.ag.agriguidance_backend.dto.RecommendationRequestDTO;
-import com.ag.agriguidance_backend.dto.RecommendationResponseDTO;
 import com.ag.agriguidance_backend.service.AiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 
-
-        @RestController
+@RestController
         @RequestMapping("/api/ai")
         @CrossOrigin("*")
         public class AiController {
@@ -18,10 +15,6 @@ import java.util.Map;
             @Autowired
             private AiService aiService;
 
-            @PostMapping("/recommend")
-            public ResponseEntity<String> getRecommendationAlias(@RequestBody RecommendationRequestDTO dto) {
-                return getRecommendation(dto);
-            }
             @PostMapping("/recommendation")
             public ResponseEntity<String> getRecommendation(@RequestBody RecommendationRequestDTO dto) {
                 String aiText = aiService.getRecommendationText(dto);
