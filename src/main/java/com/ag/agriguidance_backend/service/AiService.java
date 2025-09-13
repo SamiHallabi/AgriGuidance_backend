@@ -1,15 +1,15 @@
 package com.ag.agriguidance_backend.service;
 
 import com.ag.agriguidance_backend.dto.RecommendationRequestDTO;
+import com.ag.agriguidance_backend.model.Product;
+import com.ag.agriguidance_backend.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 
-import com.ag.agriguidance_backend.model.Product;
-import com.ag.agriguidance_backend.repository.ProductRepository;
-
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AiService {
@@ -17,8 +17,8 @@ public class AiService {
     @Autowired
     private ProductRepository productRepository;
 
-    private final String API_URL = "https://api.together.xyz/v1/chat/completions";
-    private final String API_KEY = "401ce1b8b2fab3633968c760de2ad48e7e8302410dff94ffcf6cea5f68d94f12";
+    private final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=YOUR_API_KEY";
+    private final String API_KEY = "AIzaSyADXNarOg67X8JpaLn_tSpMmwdW6uwoKgk"; // ⚠️ better move this to config/env
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -43,8 +43,19 @@ public class AiService {
                         "- Plant: %s\n" +
                         "- Surface: %.2f m²\n" +
                         "- Problem: %s\n\n" +
-                        "👉 Your task: Return plain text advice for the seller, listing products and usage clearly.\n" +
-                        "Do NOT return JSON, only text instructions.",
+                        "👉 Your task: in arabic Write a clear and practical recommendation for the seller.\n" +
+                        "\n" +
+                        "Rules:\n" +
+                        "- Be short and to the point.\n" +
+                        "- Use a simple list format.\n" +
+                        "- Recommend the best 1–3 products from the stock.\n" +
+                        "- For each product, include:\n" +
+                        "  • Product name  \n" +
+                        "  • How to use it (dosage + method)  \n" +
+                        "  • Timing (when and how often)  \n" +
+                        "- End with one quick tip for the seller.\n" +
+                        "\n" +
+                        "Do NOT write in JSON, just plain text.",
                 stockList.toString(),
                 dto.getPlantName(),
                 dto.getSurface(),
@@ -53,22 +64,35 @@ public class AiService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(API_KEY);
 
-        // Request body
-        var body = new java.util.HashMap<String, Object>();
-        body.put("model", "mistralai/Mixtral-8x7B-Instruct-v0.1");
-        body.put("messages", List.of(
-                java.util.Map.of("role", "system", "content", "You're an expert in agriculture."),
-                java.util.Map.of("role", "user", "content", prompt)
-        ));
+        // Gemini expects "contents" not "messages"
+        Map<String, Object> body = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt)
+                        ))
+                )
+        );
 
-        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(body, headers);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
         try {
-            ResponseEntity<java.util.Map> response = restTemplate.exchange(API_URL, HttpMethod.POST, entity, java.util.Map.class);
-            List<java.util.Map<String, Object>> choices = (List<java.util.Map<String, Object>>) response.getBody().get("choices");
-            return (String) ((java.util.Map<String, Object>) choices.get(0).get("message")).get("content");
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    API_URL.replace("YOUR_API_KEY", API_KEY),
+                    HttpMethod.POST,
+                    entity,
+                    Map.class
+            );
+
+            // Gemini returns candidates[0].content.parts[0].text
+            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.getBody().get("candidates");
+            if (candidates != null && !candidates.isEmpty()) {
+                Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+                List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+                return (String) parts.get(0).get("text");
+            } else {
+                return "No response from AI.";
+            }
 
         } catch (Exception e) {
             return "Error: " + e.getMessage();

@@ -18,6 +18,10 @@ import java.util.Map;
             @Autowired
             private AiService aiService;
 
+            @PostMapping("/recommend")
+            public ResponseEntity<String> getRecommendationAlias(@RequestBody RecommendationRequestDTO dto) {
+                return getRecommendation(dto);
+            }
             @PostMapping("/recommendation")
             public ResponseEntity<String> getRecommendation(@RequestBody RecommendationRequestDTO dto) {
                 String aiText = aiService.getRecommendationText(dto);
